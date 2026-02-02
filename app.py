@@ -86,15 +86,22 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. KONEKSI GOOGLE SHEETS (SMART CONNECTION) ---
+# --- 2. KONEKSI GOOGLE SHEETS (VERSI ANTI-ERROR) ---
 @st.cache_resource
 def connect_to_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     
     # Cek apakah ada di Streamlit Cloud (Pakai Secrets)
     if "gcp_service_account" in st.secrets:
-        # Kita baca string JSON mentah dari Secrets
-        creds_dict = json.loads(st.secrets["gcp_service_account"])
+        try:
+            # Coba baca langsung
+            creds_dict = json.loads(st.secrets["gcp_service_account"], strict=False)
+        except json.JSONDecodeError:
+            # KALO ERROR (Invalid Control Character), kita coba trik perbaikan manual
+            # Mengubah newlines yang nyasar menjadi string biasa
+            fixed_string = st.secrets["gcp_service_account"].replace('\n', '\\n')
+            creds_dict = json.loads(fixed_string, strict=False)
+            
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     
     # Cek apakah ada di Laptop Lokal (Pakai File JSON)
@@ -103,14 +110,6 @@ def connect_to_sheet():
     
     client = gspread.authorize(creds)
     return client.open("MyMonetaryApp")
-
-try:
-    sh = connect_to_sheet()
-    ws_transaksi = sh.worksheet("Transaksi")
-    ws_budget = sh.worksheet("Budget")
-except Exception as e:
-    st.error(f"Gagal konek ke Google Sheets! Pastikan Secrets atau File JSON ada. Error: {e}")
-    st.stop()
 
 # --- 3. OLAH DATA ---
 data_transaksi = ws_transaksi.get_all_records()
