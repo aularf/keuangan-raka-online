@@ -1,7 +1,7 @@
 import streamlit as st
-import json  
+import json
 import pandas as pd
-# ... dstimport gspread
+import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime, date
 import calendar
@@ -86,14 +86,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. KONEKSI GOOGLE SHEETS (ANTI RIBET) ---
+# --- 2. KONEKSI GOOGLE SHEETS (SMART CONNECTION) ---
 @st.cache_resource
 def connect_to_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     
-    # Cek apakah ada di Streamlit Cloud (Pakai Secrets JSON String)
+    # Cek apakah ada di Streamlit Cloud (Pakai Secrets)
     if "gcp_service_account" in st.secrets:
-        # Kita baca string JSON mentah, lalu ubah jadi Dictionary
+        # Kita baca string JSON mentah dari Secrets
         creds_dict = json.loads(st.secrets["gcp_service_account"])
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
     
@@ -103,6 +103,14 @@ def connect_to_sheet():
     
     client = gspread.authorize(creds)
     return client.open("MyMonetaryApp")
+
+try:
+    sh = connect_to_sheet()
+    ws_transaksi = sh.worksheet("Transaksi")
+    ws_budget = sh.worksheet("Budget")
+except Exception as e:
+    st.error(f"Gagal konek ke Google Sheets! Pastikan Secrets atau File JSON ada. Error: {e}")
+    st.stop()
 
 # --- 3. OLAH DATA ---
 data_transaksi = ws_transaksi.get_all_records()
@@ -118,7 +126,6 @@ df_budget['Batas_Anggaran'] = pd.to_numeric(df_budget['Batas_Anggaran'], errors=
 
 # --- 4. SIDEBAR ---
 with st.sidebar:
-    # LOGO BARU DISINI! (Icon Dompet 3D)
     st.image("https://cdn-icons-png.flaticon.com/512/9382/9382189.png", width=120)
     
     st.title("DOMPET RAKA")
@@ -185,24 +192,21 @@ col4.metric("🔥 Jatah Jajan Hari Ini", f"{jatah_per_hari:,.0f}", delta=f"Sisa 
 
 st.markdown("---")
 
-# ROW 2: GRAFIK (PERBAIKAN KONTRAS DISINI)
+# ROW 2: GRAFIK
 col_grafik_kiri, col_grafik_kanan = st.columns([1, 2])
 
 with col_grafik_kiri:
     st.subheader("🍩 Porsi Pengeluaran")
     df_pie = df_this_year[df_this_year['Tipe'] == 'Pengeluaran']
     if not df_pie.empty:
-        # Pake warna 'Vivid' biar nyala
         fig_pie = px.pie(df_pie, values='Nominal', names='Kategori', hole=0.5,
                          color_discrete_sequence=px.colors.qualitative.Vivid)
         fig_pie.update_layout(
             showlegend=False, 
             margin=dict(t=30, b=0, l=0, r=0),
             paper_bgcolor="rgba(0,0,0,0)",
-            # Teks Legend dan Label dipaksa HITAM
             font=dict(color="#000000", size=14) 
         )
-        # Label persentase di dalam chart
         fig_pie.update_traces(textposition='inside', textinfo='percent+label', textfont_size=13)
         st.plotly_chart(fig_pie, use_container_width=True)
     else:
@@ -222,14 +226,12 @@ with col_grafik_kanan:
     df_monitor['Persen'] = (df_monitor['Terpakai'] / df_monitor['Batas_Anggaran']).fillna(0) * 100
 
     fig_bar = go.Figure()
-    # Bar Background (Abu-abu agak gelap biar keliatan)
     fig_bar.add_trace(go.Bar(
         y=df_monitor['Kategori'], x=df_monitor['Batas_Anggaran'],
         name='Batas Budget', orientation='h',
         marker=dict(color='#cbd5e1', line=dict(width=0))
     ))
     
-    # Warna Bar Dinamis
     colors = ['#2563eb' if p < 80 else '#f59e0b' if p < 100 else '#ef4444' for p in df_monitor['Persen']]
     
     fig_bar.add_trace(go.Bar(
@@ -237,7 +239,6 @@ with col_grafik_kanan:
         name='Terpakai', orientation='h',
         text=df_monitor['Persen'].apply(lambda x: f"{x:.1f}%"),
         textposition='auto',
-        # Pakai warna teks hitam kalau bar-nya terang, putih kalau bar-nya gelap (biar aman pake auto)
         textfont=dict(color='white'), 
         marker=dict(color=colors) 
     ))
@@ -246,7 +247,6 @@ with col_grafik_kanan:
         barmode='overlay', 
         paper_bgcolor="rgba(0,0,0,0)", 
         plot_bgcolor="rgba(0,0,0,0)",
-        # PERBAIKAN UTAMA: Font Hitam & Grid Abu Gelap
         font=dict(color="#000000", size=12), 
         margin=dict(t=10, b=10, l=10, r=10),
         xaxis=dict(showgrid=True, gridcolor='#94a3b8', tickfont=dict(color='#0f172a', weight='bold')),
