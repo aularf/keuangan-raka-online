@@ -8,10 +8,10 @@ import calendar
 import plotly.express as px
 import plotly.graph_objects as go
 
-# --- KONFIGURASI HALAMAN ---
+# --- 1. KONFIGURASI HALAMAN ---
 st.set_page_config(page_title="Dompet Raka", page_icon="💎", layout="wide")
 
-# --- CSS TEMA: CLEAN & MODERN ---
+# --- CSS TEMA ---
 st.markdown("""
     <style>
         .stApp { background-color: #f8fafc; color: #0f172a; }
@@ -27,46 +27,44 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- FUNGSI KONEKSI SAKTI (ANTI ERROR) ---
+# --- 2. KONEKSI GOOGLE SHEETS (SIMPLE & ROBUST) ---
 @st.cache_resource
 def connect_to_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     
-    # 1. Cek Apakah Jalan di Cloud (Secrets)
+    # CEK KONEKSI CLOUD (ST.SECRETS)
     if "gcp_service_account" in st.secrets:
-        secret_value = st.secrets["gcp_service_account"]
+        # Ambil data rahasia
+        secrets_data = st.secrets["gcp_service_account"]
         
-        # Logika Pintar: Cek apakah dia Dictionary (TOML) atau String (JSON)
-        if isinstance(secret_value, dict):
-            # Jika formatnya sudah benar (TOML Table), langsung pakai!
-            creds_dict = secret_value
+        # LOGIKA SEDERHANA:
+        # Kalau dia Teks (String), kita ubah jadi JSON.
+        # Kalau dia sudah Dictionary (TOML), langsung pakai!
+        if isinstance(secrets_data, str):
+            creds_dict = json.loads(secrets_data)
         else:
-            # Jika formatnya String (JSON yang dipaste), kita coba perbaiki manual
-            try:
-                creds_dict = json.loads(secret_value, strict=False)
-            except json.JSONDecodeError:
-                # Jurus perbaikan karakter enter (\n) yang sering error
-                fixed_string = secret_value.replace('\n', '\\n')
-                creds_dict = json.loads(fixed_string, strict=False)
-        
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+            # Ini yang terjadi sekarang: Data sudah rapi (AttrDict), kita ubah jadi dict biasa
+            creds_dict = dict(secrets_data)
 
-    # 2. Cek Apakah Jalan di Laptop (File JSON)
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    
+    # CEK KONEKSI LOKAL (FILE JSON)
     else:
-        creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(
+            json.load(open("credentials.json")), scope
+        )
     
     client = gspread.authorize(creds)
     return client.open("MyMonetaryApp")
 
-# --- MAIN APP LOGIC ---
+# --- MAIN LOGIC ---
 try:
     sh = connect_to_sheet()
     ws_transaksi = sh.worksheet("Transaksi")
     ws_budget = sh.worksheet("Budget")
 except Exception as e:
-    st.error(f"❌ Gagal koneksi! Pesan Error: {e}")
-    st.info("Tips: Cek format Secrets di Streamlit Cloud. Pastikan copy-paste JSON dengan benar.")
-    st.stop() # BERHENTI DISINI KALAU ERROR, BIAR GAK CRASH KE BAWAH
+    st.error(f"❌ Koneksi Gagal: {e}")
+    st.stop()
 
 # --- OLAH DATA ---
 data_transaksi = ws_transaksi.get_all_records()
@@ -80,7 +78,7 @@ data_budget = ws_budget.get_all_records()
 df_budget = pd.DataFrame(data_budget)
 df_budget['Batas_Anggaran'] = pd.to_numeric(df_budget['Batas_Anggaran'], errors='coerce').fillna(0)
 
-# --- SIDEBAR INPUT ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.title("DOMPET RAKA 💎")
     st.markdown("---")
@@ -96,7 +94,7 @@ with st.sidebar:
     if submit_button:
         row_data = [str(tgl_input), tipe_input, kategori_input, nominal_input, ket_input]
         ws_transaksi.append_row(row_data)
-        st.toast("✅ Data Tersimpan!", icon="🚀")
+        st.toast("Data Berhasil Disimpan!", icon="✅")
         st.rerun()
 
 # --- DASHBOARD ---
@@ -107,7 +105,6 @@ total_masuk = df_this_year[df_this_year['Tipe'] == 'Pemasukan']['Nominal'].sum()
 total_keluar = df_this_year[df_this_year['Tipe'] == 'Pengeluaran']['Nominal'].sum() if not df_this_year.empty else 0
 sisa_uang = total_masuk - total_keluar
 
-# Hitung Jatah Harian
 total_budget_harian = df_budget[df_budget['Tipe_Budget'] == 'Harian']['Batas_Anggaran'].sum()
 terpakai_harian = 0
 if not df_this_year.empty:
@@ -121,7 +118,7 @@ if not df_this_year.empty:
 sisa_hari = max(1, calendar.monthrange(now.year, now.month)[1] - now.day + 1)
 jatah_per_hari = max(0, (total_budget_harian - terpakai_harian) / sisa_hari)
 
-# TAMPILAN UTAMA
+# TAMPILAN
 st.title(f"Selamat {'Pagi' if 5<=now.hour<12 else 'Siang' if 12<=now.hour<18 else 'Malam'}, Raka! 👋")
 
 c1, c2, c3, c4 = st.columns(4)
