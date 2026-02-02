@@ -1,6 +1,7 @@
 import streamlit as st
+import json  
 import pandas as pd
-import gspread
+# ... dstimport gspread
 from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime, date
 import calendar
@@ -85,21 +86,23 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. KONEKSI GOOGLE SHEETS ---
+# --- 2. KONEKSI GOOGLE SHEETS (ANTI RIBET) ---
 @st.cache_resource
 def connect_to_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+    
+    # Cek apakah ada di Streamlit Cloud (Pakai Secrets JSON String)
+    if "gcp_service_account" in st.secrets:
+        # Kita baca string JSON mentah, lalu ubah jadi Dictionary
+        creds_dict = json.loads(st.secrets["gcp_service_account"])
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+    
+    # Cek apakah ada di Laptop Lokal (Pakai File JSON)
+    else:
+        creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+    
     client = gspread.authorize(creds)
     return client.open("MyMonetaryApp")
-
-try:
-    sh = connect_to_sheet()
-    ws_transaksi = sh.worksheet("Transaksi")
-    ws_budget = sh.worksheet("Budget")
-except Exception as e:
-    st.error(f"Gagal konek: {e}")
-    st.stop()
 
 # --- 3. OLAH DATA ---
 data_transaksi = ws_transaksi.get_all_records()
