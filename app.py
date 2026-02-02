@@ -11,66 +11,82 @@ import plotly.graph_objects as go
 # --- 1. KONFIGURASI HALAMAN ---
 st.set_page_config(page_title="Dompet Raka", page_icon="💎", layout="wide")
 
-# --- CSS TEMA: MODERN GLASS UI (Ganteng Maksimal) ---
+# --- CSS TEMA: NEOBRUTALISM / HIGH CONTRAST MODERN (Gaya Inspirasi Baru) ---
 st.markdown("""
     <style>
-        /* BACKGROUND GRADASI HALUS (Biar gak monoton) */
+        /* BACKGROUND UTAMA: Warna Krem/Off-White Terang yang Bersih */
         [data-testid="stAppViewContainer"] {
-            background: linear-gradient(to top, #dfe9f3 0%, white 100%);
+            background-color: #F3F4F6;
+            color: #000000; /* Teks Default HITAM PEKAT */
         }
 
-        /* SIDEBAR (Tetap Gelap biar kontras tegas buat input) */
+        /* SIDEBAR: Hitam Solid biar kontras */
         [data-testid="stSidebar"] {
-            background-color: #1e293b;
-            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+            background-color: #111827;
+            border-right: 3px solid #000000;
         }
-        [data-testid="stSidebar"] * { color: #f1f5f9 !important; }
+        [data-testid="stSidebar"] * { color: #FFFFFF !important; } /* Teks Sidebar PUTIH */
 
-        /* KARTU KACA (Glassmorphism Effect) - Ini rahasianya! */
-        div[data-testid="stMetric"], div[data-testid="stForm"], .big-button-container {
-            background: rgba(255, 255, 255, 0.7); /* Putih transparan */
-            backdrop-filter: blur(10px); /* Efek kaca buram */
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07); /* Bayangan lembut */
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 15px;
+        /* KARTU DATA & CONTAINER: Gaya "Pop-Out" dengan Border Tebal & Bayangan Keras */
+        div[data-testid="stMetric"], div[data-testid="stForm"], .big-button-container, .stAlert {
+            background-color: #FFFFFF !important; /* Latar Putih Bersih */
+            border: 3px solid #000000 !important; /* Garis Tepi Hitam Tebal */
+            box-shadow: 6px 6px 0px #000000 !important; /* Bayangan Keras (Hard Shadow) */
+            border-radius: 12px !important;
+            padding: 20px !important;
+            color: #000000 !important; /* Pastikan Teks di dalamnya Hitam */
+            margin-bottom: 20px;
         }
 
-        /* PERBAIKAN KONTRAS TEKS (Wajib Hitam/Gelap) */
-        h1, h2, h3, p, div, span {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            color: #1e293b; /* Warna Slate Dark - Pasti Kelihatan */
+        /* PERBAIKAN TIPOGRAFI (Semua harus tegas dan jelas) */
+        h1, h2, h3, h4, p, div, span, label {
+            font-family: 'Inter', sans-serif !important;
+            color: #000000 !important; /* Paksa jadi Hitam */
+            font-weight: 700 !important; /* Agak tebal biar jelas */
         }
         
-        /* Judul Angka di Kartu */
+        /* Judul Angka di Kartu (Metric) */
         [data-testid="stMetricValue"] {
-            font-size: 28px;
-            font-weight: 800;
-            color: #0f172a !important; /* Hitam Pekat */
+            font-size: 32px !important;
+            font-weight: 900 !important; /* Sangat tebal */
         }
-        [data-testid="stMetricLabel"] { font-weight: 600; color: #475569 !important; }
+        [data-testid="stMetricLabel"] { font-size: 16px !important; font-weight: 700 !important;}
 
-        /* TOMBOL-TOMBOL KEREN */
+        /* TOMBOL-TOMBOL GAYA KERAS */
         div.stButton > button {
             width: 100%;
-            border-radius: 12px;
-            font-weight: bold;
+            background-color: #FFFFFF !important;
+            color: #000000 !important;
+            border: 3px solid #000000 !important;
+            box-shadow: 4px 4px 0px #000000 !important; /* Bayangan Keras */
+            border-radius: 10px !important;
+            font-weight: 900 !important;
             height: 55px;
-            font-size: 16px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            transition: all 0.2s ease-in-out;
+            font-size: 18px !important;
+            transition: all 0.1s ease-in-out;
         }
-        /* Tombol Primary (Biru) */
-        div.stButton > button[kind="primary"] {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-        }
-        /* Hover effect */
+
+        /* Efek Hover Tombol (Bergeser & Berubah Warna Cerah) */
         div.stButton > button:hover {
-             transform: translateY(-3px);
-             box-shadow: 0 7px 14px rgba(0,0,0,0.2);
+             transform: translate(-2px, -2px); /* Geser ke atas kiri */
+             box-shadow: 6px 6px 0px #000000 !important; /* Bayangan membesar */
+             background-color: #FFD700 !important; /* Warna Kuning Emas Cerah saat disorot */
+        }
+        
+        /* Tombol Primary (Simpan Data) dikasih warna beda */
+        div.stButton > button[kind="primary"] {
+            background-color: #A7F3D0 !important; /* Hijau Mint Cerah */
+        }
+        div.stButton > button[kind="primary"]:hover {
+            background-color: #34D399 !important; /* Hijau lebih gelap saat hover */
+        }
+
+        /* Perbaikan Ikon di Tombol Menu Home */
+        .home-menu-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            display: block;
+            text-align: center;
         }
 
     </style>
@@ -129,20 +145,21 @@ def show_home():
     # Layout Tengah
     col_sp1, col_main, col_sp2 = st.columns([1, 6, 1])
     with col_main:
-        st.markdown(f"<h1 style='text-align: center; font-size: 3rem;'>{greeting}, Raka! 👋</h1>", unsafe_allow_html=True)
-        st.markdown("<h3 style='text-align: center; color: #475569; font-weight: 400;'>Mau cek kondisi dompet atau catat jajan nih?</h3>", unsafe_allow_html=True)
-        st.markdown("---")
+        st.markdown(f"<h1 style='text-align: center; font-size: 3.5rem; margin-bottom: 0;'>{greeting}, Raka! 👋</h1>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align: center; font-weight: 600; margin-top: 10px;'>Siap pantau cuan hari ini?</h3>", unsafe_allow_html=True)
+        st.markdown("---", unsafe_allow_html=True)
         
-        # Container Kaca untuk Tombol Menu
-        st.markdown('<div class="big-button-container">', unsafe_allow_html=True)
+        # Container Tombol Menu (Gaya Pop-Out)
+        st.markdown('<div class="big-button-container" style="background-color: #DBEAFE !important;">', unsafe_allow_html=True) # Kasih warna biru muda dikit
+        st.markdown("<h3 style='text-align: center;'>🎯 PILIH MENU</h3>", unsafe_allow_html=True)
         c1, c2 = st.columns(2)
         with c1:
-            # Pakai emoji besar biar interaktif
-            st.markdown("<h1 style='text-align: center;'>📝</h1>", unsafe_allow_html=True)
-            if st.button("INPUT & DASHBOARD\n(Catat & Analisa)", type="primary"): navigate_to('dashboard')
+            # Ikon dipisah biar rapi
+            st.markdown('<span class="home-menu-icon">📝</span>', unsafe_allow_html=True)
+            if st.button("INPUT & DASHBOARD", help="Catat transaksi dan lihat analisa grafik"): navigate_to('dashboard')
         with c2:
-            st.markdown("<h1 style='text-align: center;'>📜</h1>", unsafe_allow_html=True)
-            if st.button("RIWAYAT TRANSAKSI\n(Lihat Semua Data)"): navigate_to('history')
+            st.markdown('<span class="home-menu-icon">📜</span>', unsafe_allow_html=True)
+            if st.button("RIWAYAT LENGKAP", help="Lihat semua daftar transaksi"): navigate_to('history')
         st.markdown('</div>', unsafe_allow_html=True)
 
 # --- HALAMAN 2: DASHBOARD ---
@@ -158,36 +175,39 @@ def show_dashboard():
             nominal_input = st.number_input("Nominal (Rp)", min_value=0, step=1000)
             ket_input = st.text_input("Catatan")
             st.markdown("---")
+            # Tombol Primary (Hijau Mint)
             submit_button = st.form_submit_button(label='💾 SIMPAN DATA', type="primary")
 
         if submit_button:
             row_data = [str(tgl_input), tipe_input, kategori_input, nominal_input, ket_input]
             ws_transaksi.append_row(row_data)
-            st.toast("Data Berhasil Masuk! Dashboard diperbarui.", icon="✅")
+            st.toast("DATA MASUK! MANTAP! 🚀", icon="✅")
             st.rerun()
         
         st.write("")
         if st.button("🏠 KEMBALI KE HOME"): navigate_to('home')
 
-    st.title("📊 Monitoring Keuangan Real-Time")
+    st.title("📊 Monitoring Real-Time")
+    st.markdown("---")
     
     total_masuk = df_this_year[df_this_year['Tipe'] == 'Pemasukan']['Nominal'].sum() if not df_this_year.empty else 0
     total_keluar = df_this_year[df_this_year['Tipe'] == 'Pengeluaran']['Nominal'].sum() if not df_this_year.empty else 0
     sisa_uang = total_masuk - total_keluar
     
-    # Komentar Otomatis (Dalam Box Kaca)
-    st.markdown('<div class="big-button-container" style="padding: 15px; text-align: center;">', unsafe_allow_html=True)
+    # Komentar Otomatis (Dalam Box Kuning Cerah)
+    st.markdown('<div class="big-button-container" style="background-color: #FEF9C3 !important; text-align: center;">', unsafe_allow_html=True)
+    st.markdown("### 📢 STATUS KEUANGAN")
     if total_masuk > 0:
         ratio = total_keluar / total_masuk
-        if sisa_uang < 0: st.error("🚨 **DARURAT!** Besar pasak daripada tiang. Kamu minus!")
-        elif ratio > 0.8: st.warning("⚠️ **HATI-HATI!** Pengeluaranmu sudah 80% dari pemasukan.")
-        elif ratio > 0.5: st.success("✅ **AMAN.** Pengeluaran masih wajar, pantau terus.")
-        else: st.success("🌿 **SEHAT BANGET!** Kamu hemat banget, tabungan aman.")
-    else: st.info("😐 Belum ada pemasukan yang tercatat tahun ini.")
+        if sisa_uang < 0: st.markdown("### 🚨 DARURAT! MINUS! REM BLONG!")
+        elif ratio > 0.8: st.markdown("### ⚠️ HATI-HATI! Udah boros nih.")
+        elif ratio > 0.5: st.markdown("### ✅ AMAN. Masih terkendali.")
+        else: st.markdown("### 🌿 SEHAT BANGET! Tabungan aman jaya.")
+    else: st.markdown("### 😐 Belum ada pemasukan.")
     st.markdown('</div>', unsafe_allow_html=True)
 
     c1, c2, c3 = st.columns(3)
-    c1.metric("Sisa Uang (Cashflow)", f"Rp {sisa_uang:,.0f}", delta="Saldo Saat Ini")
+    c1.metric("Sisa Uang (Cashflow)", f"Rp {sisa_uang:,.0f}", delta="Saldo")
     c2.metric("Total Pemasukan", f"Rp {total_masuk:,.0f}")
     c3.metric("Total Pengeluaran", f"Rp {total_keluar:,.0f}", delta="-Terpakai", delta_color="inverse")
 
@@ -196,10 +216,11 @@ def show_dashboard():
         st.subheader("🍩 Porsi Jajan")
         df_out = df_this_year[df_this_year['Tipe'] == 'Pengeluaran']
         if not df_out.empty:
+            # Warna chart yang lebih tegas (Bold)
             fig = px.pie(df_out, values='Nominal', names='Kategori', hole=0.5, color_discrete_sequence=px.colors.qualitative.Bold)
-            # Pastikan teks di chart HITAM
-            fig.update_layout(showlegend=False, margin=dict(t=0,b=0,l=0,r=0), height=300, paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#1e293b"))
-            fig.update_traces(textposition='inside', textinfo='percent+label')
+            # Paksa teks chart jadi HITAM dan tebal
+            fig.update_layout(showlegend=False, margin=dict(t=0,b=0,l=0,r=0), height=300, paper_bgcolor="rgba(0,0,0,0)", font=dict(color="#000000", size=14, family="Inter Black"))
+            fig.update_traces(textposition='inside', textinfo='percent+label', textfont_size=14)
             st.plotly_chart(fig, use_container_width=True)
         else: st.info("Belum ada data pengeluaran.")
 
@@ -213,14 +234,18 @@ def show_dashboard():
         df_mon['Persen'] = (df_mon['Terpakai'] / df_mon['Batas_Anggaran']).fillna(0) * 100
         
         fig_bar = go.Figure()
-        fig_bar.add_trace(go.Bar(y=df_mon['Kategori'], x=df_mon['Batas_Anggaran'], orientation='h', name='Batas', marker_color='#cbd5e1'))
+        # Bar Background (Abu gelap tegas)
+        fig_bar.add_trace(go.Bar(y=df_mon['Kategori'], x=df_mon['Batas_Anggaran'], orientation='h', name='Batas', marker_color='#9CA3AF', marker_line_width=2, marker_line_color='black'))
         colors = ['#3b82f6' if p < 85 else '#ef4444' for p in df_mon['Persen']]
-        fig_bar.add_trace(go.Bar(y=df_mon['Kategori'], x=df_mon['Terpakai'], orientation='h', name='Terpakai', marker_color=colors, text=df_mon['Persen'].apply(lambda x: f"{x:.1f}%"), textposition='auto'))
-        # Pastikan teks dan grid chart HITAM/GELAP
-        fig_bar.update_layout(barmode='overlay', showlegend=False, margin=dict(t=0,b=0,l=0,r=0), height=350, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#1e293b"), xaxis=dict(gridcolor='#94a3b8'))
+        # Bar Terpakai dengan border hitam
+        fig_bar.add_trace(go.Bar(y=df_mon['Kategori'], x=df_mon['Terpakai'], orientation='h', name='Terpakai', marker_color=colors, text=df_mon['Persen'].apply(lambda x: f"{x:.1f}%"), textposition='auto', marker_line_width=2, marker_line_color='black'))
+        
+        # Paksa semua teks dan grid chart jadi HITAM TEGAS
+        fig_bar.update_layout(barmode='overlay', showlegend=False, margin=dict(t=0,b=0,l=0,r=0), height=350, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)", font=dict(color="#000000", size=13, family="Inter Bold"), xaxis=dict(gridcolor='#000000', gridwidth=1), yaxis=dict(gridcolor='#000000'))
         st.plotly_chart(fig_bar, use_container_width=True)
     
-    if st.button("🔄 Refresh Data / Buat Laporan Baru", use_container_width=True): st.rerun()
+    st.markdown("---")
+    if st.button("🔄 REFRESH DATA", use_container_width=True): st.rerun()
 
 # --- HALAMAN 3: RIWAYAT ---
 def show_history():
@@ -234,6 +259,9 @@ def show_history():
         df_show = df_transaksi.copy()
         if filter_kat: df_show = df_show[df_show['Kategori'].isin(filter_kat)]
         if filter_tipe != "Semua": df_show = df_show[df_show['Tipe'] == filter_tipe]
+        
+        # Tabel dengan border tegas
+        st.markdown('<style> [data-testid="stDataFrame"] { border: 3px solid black !important; border-radius: 10px; } </style>', unsafe_allow_html=True)
         st.dataframe(df_show.sort_values(by='Tanggal', ascending=False), use_container_width=True, column_config={"Tanggal": st.column_config.DateColumn("Tanggal", format="DD/MM/YYYY"), "Nominal": st.column_config.NumberColumn("Nominal", format="Rp %d")})
     else: st.info("Belum ada data sama sekali.")
 
