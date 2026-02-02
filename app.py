@@ -11,75 +11,100 @@ import plotly.graph_objects as go
 # --- 1. KONFIGURASI HALAMAN ---
 st.set_page_config(page_title="Dompet Raka", page_icon="💳", layout="wide")
 
-# --- CSS TEMA: SOFT MOBILE APP UI (Mirip Referensi Biru Kamu) ---
+# --- CSS TEMA: TOSCA CLEAN (High Contrast) ---
 st.markdown("""
     <style>
-        /* BACKGROUND: Abu-abu muda bersih (Biar kartu putihnya "pop-up") */
+        /* GLOBAL FONT & COLOR */
+        html, body, [class*="css"] {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            color: #1e293b; /* Teks Utama: Hitam Slate Gelap (Pasti Kebaca) */
+        }
+
+        /* BACKGROUND UTAMA: Gradasi Tosca Muda ke Putih */
         [data-testid="stAppViewContainer"] {
-            background-color: #F1F5F9;
-            font-family: 'Helvetica', sans-serif;
+            background: linear-gradient(180deg, #ccfbf1 0%, #ffffff 100%); /* Teal-100 to White */
         }
 
-        /* HEADER SIDEBAR: Biru Tosca Gelap */
+        /* SIDEBAR: Putih Bersih dengan Aksen Tosca (Biar serasi) */
         [data-testid="stSidebar"] {
-            background-color: #0F172A;
+            background-color: #ffffff;
+            border-right: 1px solid #99f6e4; /* Garis Tosca Tipis */
         }
-        [data-testid="stSidebar"] * { color: #F8FAFC !important; }
-
-        /* KARTU PUTIH (Card Style) */
-        div[data-testid="stMetric"], div.stButton, div[data-testid="stForm"] {
-            background-color: #FFFFFF;
-            border-radius: 20px; /* Sudut Bulat Banget */
-            padding: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02); /* Bayangan Halus */
-            border: 1px solid #E2E8F0;
+        
+        /* Teks di Sidebar PASTI HITAM */
+        [data-testid="stSidebar"] * {
+            color: #0f172a !important; /* Hitam Pekat */
         }
-
-        /* METRIC VALUE (Angka Duit) */
-        [data-testid="stMetricValue"] {
-            font-size: 28px;
-            font-weight: 800;
-            color: #0EA5E9; /* Warna Biru Laut */
-        }
-        [data-testid="stMetricLabel"] { font-size: 14px; font-weight: 600; color: #64748B; }
-
-        /* TOMBOL UTAMA (Gaya Tombol Ungu di Referensi) */
-        div.stButton > button {
-            background: linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%); /* Gradasi Ungu */
-            color: white;
-            border: none;
-            border-radius: 15px;
-            height: 50px;
-            font-weight: bold;
-            box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);
-            width: 100%;
-            transition: transform 0.2s;
-        }
-        div.stButton > button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba(99, 102, 241, 0.5);
-            color: white;
+        
+        /* Input Field di Sidebar */
+        .stTextInput input, .stNumberInput input, .stDateInput input, .stSelectbox div[data-baseweb="select"] {
+            background-color: #f0fdfa; /* Tosca Paling Muda */
+            color: #0f172a;
+            border: 1px solid #14b8a6; /* Border Tosca */
         }
 
-        /* TOMBOL SEKUNDER (Outline) */
-        div.stButton > button[kind="secondary"] {
-            background: white;
-            color: #6366F1;
-            border: 2px solid #6366F1;
-        }
-
-        /* CUSTOM HEADER BOX (Biru di atas) */
+        /* HEADER BOX (Sapaan) */
         .header-box {
-            background: linear-gradient(90deg, #0EA5E9 0%, #2563EB 100%);
-            padding: 30px;
-            border-radius: 20px;
+            background: linear-gradient(90deg, #0d9488 0%, #14b8a6 100%); /* Tosca Gelap ke Terang */
+            padding: 25px;
+            border-radius: 15px;
             color: white;
-            margin-bottom: 20px;
             text-align: center;
-            box-shadow: 0 10px 25px rgba(14, 165, 233, 0.3);
+            box-shadow: 0 4px 15px rgba(20, 184, 166, 0.3);
+            margin-bottom: 25px;
         }
         .header-box h1 { color: white !important; margin: 0; font-size: 2.5rem; }
-        .header-box p { color: #E0F2FE !important; font-size: 1.1rem; }
+        .header-box p { color: #f0fdfa !important; font-size: 1.1rem; margin-top: 5px; }
+
+        /* KARTU MENU & DATA (Putih Bersih + Shadow Tosca Tipis) */
+        div[data-testid="stMetric"], div.stButton > button, div[data-testid="stForm"] {
+            background-color: #ffffff;
+            border-radius: 12px;
+            border: 1px solid #ccfbf1;
+            box-shadow: 0 4px 6px rgba(13, 148, 136, 0.1);
+            color: #1e293b;
+        }
+
+        /* JUDUL ANGKA (METRIC) */
+        [data-testid="stMetricValue"] {
+            font-size: 26px;
+            font-weight: 800;
+            color: #0d9488; /* Tosca Tua */
+        }
+        [data-testid="stMetricLabel"] { font-size: 14px; font-weight: 600; color: #64748b; }
+
+        /* TOMBOL UTAMA (Tosca Gradient) */
+        div.stButton > button {
+            background: linear-gradient(90deg, #0d9488 0%, #14b8a6 100%);
+            color: white !important; /* Teks Tombol PUTIH TEGAS */
+            border: none;
+            border-radius: 10px;
+            height: 50px;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        div.stButton > button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(20, 184, 166, 0.4);
+            color: white !important;
+        }
+        
+        /* Tombol Sekunder/Menu (Putih Border Tosca) */
+        div.stButton > button[key*="btn_dash"], div.stButton > button[key*="btn_hist"] {
+            background: #ffffff;
+            color: #0d9488 !important; /* Teks Tosca */
+            border: 2px solid #0d9488;
+        }
+        div.stButton > button[key*="btn_dash"]:hover, div.stButton > button[key*="btn_hist"]:hover {
+            background: #f0fdfa;
+        }
+
+        /* ALERT BOXES */
+        .stAlert { background-color: #ffffff; border: 1px solid #e2e8f0; }
+
+        /* Perbaikan Tabel */
+        [data-testid="stDataFrame"] { border: 1px solid #ccfbf1; border-radius: 10px; }
 
     </style>
 """, unsafe_allow_html=True)
@@ -134,42 +159,40 @@ def show_home():
     elif 15 <= jam < 18: greeting, icon = "Selamat Sore", "🌇"
     else: greeting, icon = "Selamat Malam", "🌙"
 
-    # Header Biru Besar (Pakai HTML biasa biar aman dari zoom)
+    # Header Tosca (HTML)
     st.markdown(f"""
         <div class="header-box">
             <h1>{greeting}, Raka! {icon}</h1>
-            <p>Siap mengatur cuan biar makin sultan?</p>
+            <p>Siap pantau cuan hari ini?</p>
         </div>
     """, unsafe_allow_html=True)
     
-    # Menu Pilihan (Pakai Native Columns biar Responsif)
-    st.write("### 🚀 Pilih Menu")
+    st.markdown("<h3 style='text-align: center; color: #0f172a;'>🚀 Pilih Menu Aplikasi</h3>", unsafe_allow_html=True)
+    st.write("")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        # Kartu Putih Menu 1
         with st.container(border=True):
-            st.markdown("<h2 style='text-align: center;'>📝</h2>", unsafe_allow_html=True)
-            st.markdown("<h4 style='text-align: center;'>Input & Dashboard</h4>", unsafe_allow_html=True)
-            st.write("Catat transaksi baru dan lihat grafik analisa keuanganmu.")
+            st.markdown("<h1 style='text-align: center;'>📝</h1>", unsafe_allow_html=True)
+            st.markdown("<h4 style='text-align: center; color: #0d9488;'>Input & Dashboard</h4>", unsafe_allow_html=True)
             if st.button("Buka Dashboard", key="btn_dash", use_container_width=True):
                 navigate_to('dashboard')
 
     with col2:
-        # Kartu Putih Menu 2
         with st.container(border=True):
-            st.markdown("<h2 style='text-align: center;'>📜</h2>", unsafe_allow_html=True)
-            st.markdown("<h4 style='text-align: center;'>Riwayat Lengkap</h4>", unsafe_allow_html=True)
-            st.write("Cek daftar semua pemasukan dan pengeluaran yang lalu.")
+            st.markdown("<h1 style='text-align: center;'>📜</h1>", unsafe_allow_html=True)
+            st.markdown("<h4 style='text-align: center; color: #0d9488;'>Riwayat Lengkap</h4>", unsafe_allow_html=True)
             if st.button("Lihat Riwayat", key="btn_hist", use_container_width=True):
                 navigate_to('history')
 
 # --- HALAMAN 2: DASHBOARD ---
 def show_dashboard():
+    # SIDEBAR: Sekarang Putih & Tosca (Serasi)
     with st.sidebar:
         st.image("https://cdn-icons-png.flaticon.com/512/9382/9382189.png", width=80)
-        st.title("Input Baru")
+        st.markdown("<h2 style='color: #0d9488;'>Input Transaksi</h2>", unsafe_allow_html=True)
+        
         with st.form(key='input_form', clear_on_submit=True):
             tgl_input = st.date_input("Tanggal", date.today())
             tipe_input = st.selectbox("Tipe", ["Pengeluaran", "Pemasukan"])
@@ -189,9 +212,9 @@ def show_dashboard():
         st.write("")
         if st.button("⬅️ Kembali ke Home"): navigate_to('home')
 
-    # Header Dashboard
-    st.title("📊 Monitoring Keuangan")
-    st.caption("Update Real-time dari Google Sheets")
+    # Main Content
+    st.markdown("<h1 style='color: #0d9488;'>📊 Monitoring Keuangan</h1>", unsafe_allow_html=True)
+    st.caption("Update Real-time • Tema Tosca")
     
     total_masuk = df_this_year[df_this_year['Tipe'] == 'Pemasukan']['Nominal'].sum() if not df_this_year.empty else 0
     total_keluar = df_this_year[df_this_year['Tipe'] == 'Pengeluaran']['Nominal'].sum() if not df_this_year.empty else 0
@@ -209,7 +232,6 @@ def show_dashboard():
     else:
         st.info("ℹ️ Belum ada data pemasukan.")
 
-    # 3 Kolom Metrik
     c1, c2, c3 = st.columns(3)
     c1.metric("Sisa Saldo", f"Rp {sisa_uang:,.0f}", delta="Cashflow")
     c2.metric("Pemasukan", f"Rp {total_masuk:,.0f}")
@@ -217,14 +239,20 @@ def show_dashboard():
 
     st.markdown("---")
 
-    # Grafik
     c_left, c_right = st.columns([1, 2])
     with c_left:
         st.subheader("🍩 Porsi Jajan")
         df_out = df_this_year[df_this_year['Tipe'] == 'Pengeluaran']
         if not df_out.empty:
-            fig = px.pie(df_out, values='Nominal', names='Kategori', hole=0.6, color_discrete_sequence=px.colors.qualitative.Pastel)
-            fig.update_layout(showlegend=False, margin=dict(t=0,b=0,l=0,r=0), height=300, paper_bgcolor="rgba(0,0,0,0)")
+            # CHART: Paksa Text Hitam biar kelihatan di background terang
+            fig = px.pie(df_out, values='Nominal', names='Kategori', hole=0.6, color_discrete_sequence=px.colors.qualitative.Prism)
+            fig.update_layout(
+                showlegend=False, 
+                margin=dict(t=0,b=0,l=0,r=0), 
+                height=300, 
+                paper_bgcolor="rgba(0,0,0,0)",
+                font=dict(color="#1e293b", size=13) # TEKS HITAM
+            )
             st.plotly_chart(fig, use_container_width=True)
         else: st.info("Kosong.")
 
@@ -238,17 +266,36 @@ def show_dashboard():
         df_mon['Persen'] = (df_mon['Terpakai'] / df_mon['Batas_Anggaran']).fillna(0) * 100
         
         fig_bar = go.Figure()
-        fig_bar.add_trace(go.Bar(y=df_mon['Kategori'], x=df_mon['Batas_Anggaran'], orientation='h', name='Batas', marker_color='#E2E8F0'))
-        colors = ['#6366F1' if p < 85 else '#EF4444' for p in df_mon['Persen']]
-        fig_bar.add_trace(go.Bar(y=df_mon['Kategori'], x=df_mon['Terpakai'], orientation='h', name='Terpakai', marker_color=colors, text=df_mon['Persen'].apply(lambda x: f"{x:.1f}%"), textposition='auto'))
-        fig_bar.update_layout(barmode='overlay', showlegend=False, margin=dict(t=0,b=0,l=0,r=0), height=350, paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+        # Bar Background (Abu Tosca Muda)
+        fig_bar.add_trace(go.Bar(y=df_mon['Kategori'], x=df_mon['Batas_Anggaran'], orientation='h', name='Batas', marker_color='#cbd5e1'))
+        
+        # Bar Terpakai (Tosca vs Merah)
+        colors = ['#0d9488' if p < 85 else '#ef4444' for p in df_mon['Persen']]
+        fig_bar.add_trace(go.Bar(
+            y=df_mon['Kategori'], x=df_mon['Terpakai'], orientation='h', name='Terpakai', 
+            marker_color=colors, 
+            text=df_mon['Persen'].apply(lambda x: f"{x:.1f}%"), 
+            textposition='auto',
+            textfont=dict(color="white") # Text di dalam bar Putih
+        ))
+        
+        fig_bar.update_layout(
+            barmode='overlay', 
+            showlegend=False, 
+            margin=dict(t=0,b=0,l=0,r=0), 
+            height=350, 
+            paper_bgcolor="rgba(0,0,0,0)", 
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#1e293b", size=12), # Label Sumbu HITAM
+            xaxis=dict(gridcolor='#e2e8f0'),
+        )
         st.plotly_chart(fig_bar, use_container_width=True)
     
-    if st.button("🔄 Refresh"): st.rerun()
+    if st.button("🔄 Refresh Data"): st.rerun()
 
 # --- HALAMAN 3: RIWAYAT ---
 def show_history():
-    st.title("📜 Riwayat Transaksi")
+    st.markdown("<h1 style='color: #0d9488;'>📜 Riwayat Transaksi</h1>", unsafe_allow_html=True)
     if st.button("⬅️ Kembali ke Home"): navigate_to('home')
     st.markdown("---")
     
@@ -261,7 +308,15 @@ def show_history():
         if filter_kat: df_show = df_show[df_show['Kategori'].isin(filter_kat)]
         if filter_tipe != "Semua": df_show = df_show[df_show['Tipe'] == filter_tipe]
         
-        st.dataframe(df_show.sort_values(by='Tanggal', ascending=False), use_container_width=True, hide_index=True)
+        st.dataframe(
+            df_show.sort_values(by='Tanggal', ascending=False), 
+            use_container_width=True, 
+            hide_index=True,
+            column_config={
+                "Tanggal": st.column_config.DateColumn("Tanggal", format="DD/MM/YYYY"),
+                "Nominal": st.column_config.NumberColumn("Nominal", format="Rp %d")
+            }
+        )
     else: st.info("Belum ada data.")
 
 # --- ROUTER ---
