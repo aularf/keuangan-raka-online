@@ -3,7 +3,7 @@ import json
 import pandas as pd
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
-from datetime import datetime, date, timedelta # Tambah timedelta buat WIB
+from datetime import datetime, date, timedelta
 import calendar
 import plotly.express as px
 import plotly.graph_objects as go
@@ -11,41 +11,16 @@ import plotly.graph_objects as go
 # --- 1. KONFIGURASI HALAMAN ---
 st.set_page_config(page_title="Dompet Raka", page_icon="💳", layout="wide")
 
-# --- CSS TEMA: TOSCA UNIFIED (LIGHT MODE FORCED) ---
+# --- CSS TEMA: ADAPTIVE (BUNGLON) ---
+# Kita pakai variabel native (var(--...)) biar otomatis ngikutin Dark/Light mode HP kamu
 st.markdown("""
     <style>
-        /* PAKSA MODE TERANG (Light Mode Override) */
-        :root {
-            --primary-color: #0d9488;
-            --background-color: #f0fdfa;
-            --secondary-background-color: #ffffff;
-            --text-color: #0f172a;
-            --font: "Helvetica Neue", sans-serif;
-        }
-
-        /* GLOBAL TEXT COLOR - HITAM PEKAT */
-        html, body, [class*="css"], [class*="st-"], h1, h2, h3, p, span, div, label {
-            color: #0f172a !important; 
-            font-family: 'Helvetica', sans-serif;
-        }
-
-        /* BACKGROUND UTAMA: Gradasi Tosca Muda */
-        [data-testid="stAppViewContainer"] {
-            background: linear-gradient(180deg, #ccfbf1 0%, #ffffff 100%);
-        }
-
-        /* SIDEBAR: Putih Bersih */
-        [data-testid="stSidebar"] {
-            background-color: #ffffff;
-            border-right: 1px solid #99f6e4;
-        }
-        
-        /* HEADER BOX */
+        /* HEADER BOX (Sapaan) - Tetap Tosca Gradient di kedua mode */
         .header-box {
             background: linear-gradient(90deg, #0f766e 0%, #14b8a6 100%);
             padding: 30px;
             border-radius: 15px;
-            color: white !important;
+            color: white;
             text-align: center;
             box-shadow: 0 4px 15px rgba(20, 184, 166, 0.3);
             margin-bottom: 25px;
@@ -53,44 +28,36 @@ st.markdown("""
         .header-box h1 { color: white !important; margin: 0; font-size: 2.5rem; }
         .header-box p { color: #f0fdfa !important; font-size: 1.1rem; }
 
-        /* PERBAIKAN INPUT FIELD (BIAR GAK HITAM) */
-        /* Kotak Input */
-        .stTextInput input, .stNumberInput input, .stDateInput input {
-            background-color: #ffffff !important; /* Latar Putih */
-            color: #0f172a !important; /* Teks Hitam */
-            border: 1px solid #0d9488 !important; /* Garis Tosca */
-            border-radius: 8px;
-        }
-        /* Dropdown (Selectbox) */
-        div[data-baseweb="select"] > div {
-            background-color: #ffffff !important;
-            color: #0f172a !important;
-            border: 1px solid #0d9488 !important;
-            border-radius: 8px;
-        }
-        /* Pilihan di dalam Dropdown */
-        li[role="option"] {
-            background-color: #ffffff !important;
-            color: #0f172a !important;
-        }
-
-        /* KARTU MENU & METRIK */
-        div[data-testid="stMetric"], div[data-testid="stForm"], .menu-card {
-            background-color: #ffffff !important;
-            border: 1px solid #ccfbf1;
+        /* KARTU MENU & METRIK (ADAPTIF) */
+        div[data-testid="stMetric"], div[data-testid="stForm"], .menu-card, .big-button-container {
+            background-color: var(--secondary-background-color); /* Otomatis Putih/Abu Gelap */
+            border: 1px solid var(--primary-color); /* Garis pinggir Tosca */
             border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(13, 148, 136, 0.1);
             padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
-        /* TEXT METRIC */
+        /* TEXT VISIBILITY FIX (Biar gak abu-abu samar) */
+        h1, h2, h3, h4, p, li, .stMarkdown {
+            color: var(--text-color) !important; /* Ikut warna teks sistem */
+        }
+        
+        /* Judul Angka (Metric) */
         [data-testid="stMetricValue"] {
-            color: #0d9488 !important; /* Angka Tosca */
+            color: #14b8a6 !important; /* Selalu Tosca biar pop-up */
             font-size: 28px;
             font-weight: 800;
         }
+        
+        /* Label Metric (Judul kecil di atas angka) */
+        [data-testid="stMetricLabel"] {
+            color: var(--text-color) !important;
+            opacity: 0.8;
+            font-size: 14px;
+            font-weight: 600;
+        }
 
-        /* TOMBOL UTAMA */
+        /* TOMBOL UTAMA (Tosca) */
         div.stButton > button {
             background: linear-gradient(90deg, #0d9488 0%, #14b8a6 100%);
             color: white !important;
@@ -99,24 +66,23 @@ st.markdown("""
             border-radius: 10px;
             font-weight: bold;
         }
-        div.stButton > button:hover {
-            opacity: 0.9;
-            color: white !important;
-            transform: translateY(-2px);
-        }
         
-        /* Tombol Sekunder (Menu) */
+        /* Tombol Sekunder (Outline) */
         div.stButton > button[key*="btn_"] {
-            background: white;
-            color: #0d9488 !important;
+            background: transparent;
+            color: var(--text-color) !important;
             border: 2px solid #0d9488;
         }
 
-        /* TABEL */
+        /* TABEL DATA */
         [data-testid="stDataFrame"] {
-            border: 1px solid #ccfbf1;
+            border: 1px solid #14b8a6;
             border-radius: 10px;
-            background-color: white;
+        }
+
+        /* SIDEBAR */
+        [data-testid="stSidebar"] {
+            border-right: 1px solid #14b8a6;
         }
     </style>
 """, unsafe_allow_html=True)
@@ -172,15 +138,15 @@ def show_home():
     elif 15 <= jam < 18: greeting, icon = "Selamat Sore", "🌇"
     else: greeting, icon = "Selamat Malam", "🌙"
 
-    # Header
+    # Header Gradient (Tetap Tosca biar branding kuat)
     st.markdown(f"""
         <div class="header-box">
             <h1>{greeting}, Raka! {icon}</h1>
-            <p>Aplikasi siap! Sekarang jam {wib_now.strftime('%H:%M')} WIB</p>
+            <p>Sekarang jam {wib_now.strftime('%H:%M')} WIB</p>
         </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("<h3 style='text-align: center;'>🚀 Menu Utama</h3>", unsafe_allow_html=True)
+    st.write("### 🚀 Menu Utama")
     st.write("")
     
     col1, col2 = st.columns(2)
@@ -193,7 +159,7 @@ def show_home():
 
 # --- HALAMAN 2: DASHBOARD ---
 def show_dashboard():
-    # SIDEBAR SERASI
+    # SIDEBAR
     with st.sidebar:
         st.image("https://cdn-icons-png.flaticon.com/512/9382/9382189.png", width=80)
         st.markdown("### Input Transaksi")
@@ -218,7 +184,6 @@ def show_dashboard():
 
     # KONTEN UTAMA
     st.markdown("## 📊 Monitoring Keuangan")
-    st.caption(f"Update per {wib_now.strftime('%d %B %Y')}")
     
     total_masuk = df_this_year[df_this_year['Tipe'] == 'Pemasukan']['Nominal'].sum() if not df_this_year.empty else 0
     total_keluar = df_this_year[df_this_year['Tipe'] == 'Pengeluaran']['Nominal'].sum() if not df_this_year.empty else 0
@@ -231,7 +196,7 @@ def show_dashboard():
         elif ratio > 0.8: st.warning("⚠️ **BOROS!** Pengeluaran > 80%")
         else: st.success("✅ **SEHAT!** Keuangan Aman.")
     else:
-        st.info("ℹ️ Belum ada pemasukan bulan ini.")
+        st.info("ℹ️ Belum ada pemasukan tahun ini.")
 
     c1, c2, c3 = st.columns(3)
     c1.metric("Sisa Saldo", f"Rp {sisa_uang:,.0f}", delta="Cashflow")
@@ -245,10 +210,9 @@ def show_dashboard():
         st.subheader("🍩 Porsi Jajan")
         df_out = df_this_year[df_this_year['Tipe'] == 'Pengeluaran']
         if not df_out.empty:
-            # FIX TEXT CHART HITAM
+            # CHART YANG ADAPTIF (Teks otomatis menyesuaikan tema)
             fig = px.pie(df_out, values='Nominal', names='Kategori', hole=0.6, color_discrete_sequence=px.colors.qualitative.Prism)
-            fig.update_layout(showlegend=False, margin=dict(t=0,b=0,l=0,r=0), height=300, paper_bgcolor="rgba(0,0,0,0)",
-                font=dict(color="black", size=14)) # PAKSA HITAM
+            fig.update_layout(showlegend=False, margin=dict(t=0,b=0,l=0,r=0), height=300, paper_bgcolor="rgba(0,0,0,0)") 
             st.plotly_chart(fig, use_container_width=True)
         else: st.info("Kosong.")
 
@@ -262,15 +226,22 @@ def show_dashboard():
         df_mon['Persen'] = (df_mon['Terpakai'] / df_mon['Batas_Anggaran']).fillna(0) * 100
         
         fig_bar = go.Figure()
-        fig_bar.add_trace(go.Bar(y=df_mon['Kategori'], x=df_mon['Batas_Anggaran'], orientation='h', name='Batas', marker_color='#cbd5e1'))
-        colors = ['#0d9488' if p < 85 else '#ef4444' for p in df_mon['Persen']]
-        fig_bar.add_trace(go.Bar(y=df_mon['Kategori'], x=df_mon['Terpakai'], orientation='h', name='Terpakai', marker_color=colors, 
-            text=df_mon['Persen'].apply(lambda x: f"{x:.1f}%"), textposition='auto', textfont=dict(color="white")))
+        # Warna Bar Background (Abu Soft)
+        fig_bar.add_trace(go.Bar(y=df_mon['Kategori'], x=df_mon['Batas_Anggaran'], orientation='h', name='Batas', marker_color='rgba(128, 128, 128, 0.3)'))
         
-        # FIX TEXT CHART HITAM
-        fig_bar.update_layout(barmode='overlay', showlegend=False, margin=dict(t=0,b=0,l=0,r=0), height=350, 
-            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
-            font=dict(color="black", size=12), xaxis=dict(gridcolor='#e2e8f0'))
+        # Warna Bar Terpakai (Tosca vs Merah)
+        colors = ['#0d9488' if p < 85 else '#ef4444' for p in df_mon['Persen']]
+        fig_bar.add_trace(go.Bar(
+            y=df_mon['Kategori'], x=df_mon['Terpakai'], orientation='h', name='Terpakai', 
+            marker_color=colors, 
+            text=df_mon['Persen'].apply(lambda x: f"{x:.1f}%"), 
+            textposition='auto'
+        ))
+        
+        fig_bar.update_layout(
+            barmode='overlay', showlegend=False, margin=dict(t=0,b=0,l=0,r=0), height=350, 
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)"
+        )
         st.plotly_chart(fig_bar, use_container_width=True)
     
     if st.button("🔄 Refresh Data"): st.rerun()
