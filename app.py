@@ -11,39 +11,98 @@ import plotly.graph_objects as go
 # --- 1. KONFIGURASI HALAMAN ---
 st.set_page_config(page_title="Dompet Raka", page_icon="💎", layout="wide")
 
-# --- CSS TEMA ---
+# --- CSS TEMA: PROFESSIONAL CLEAN (High Contrast) ---
 st.markdown("""
     <style>
-        .stApp { background-color: #f8fafc; color: #0f172a; }
-        [data-testid="stSidebar"] { background-color: #1e293b; }
-        [data-testid="stSidebar"] * { color: #f1f5f9 !important; }
-        div[data-testid="stMetric"] {
-            background-color: white; border-left: 5px solid #3b82f6;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-radius: 8px;
+        /* BACKGROUND: Putih Abu Elegan */
+        .stApp {
+            background-color: #f8fafc;
+            color: #0f172a; 
         }
-        [data-testid="stMetricValue"] { font-size: 24px; font-weight: 800; color: #0f172a; }
-        .stButton > button { background-color: #3b82f6; color: white; border-radius: 8px; font-weight: bold; }
-        h1, h2, h3 { color: #0f172a !important; font-family: 'Segoe UI', sans-serif; }
+
+        /* SIDEBAR: Biru Gelap Solid */
+        [data-testid="stSidebar"] {
+            background-color: #1e293b;
+        }
+        
+        /* Teks di Sidebar jadi Putih/Terang */
+        [data-testid="stSidebar"] h1, [data-testid="stSidebar"] p, [data-testid="stSidebar"] label, [data-testid="stSidebar"] span, [data-testid="stSidebar"] div {
+            color: #f1f5f9 !important;
+        }
+
+        /* CARD METRIK: Putih Bersih + Shadow Lebih Tegas */
+        div[data-testid="stMetric"] {
+            background-color: #ffffff;
+            border-left: 6px solid #2563eb;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        
+        div[data-testid="stMetric"]:hover {
+            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+            transition: all 0.2s ease;
+        }
+
+        /* JUDUL ANGKA (Value) - Hitam Pekat */
+        [data-testid="stMetricValue"] {
+            font-size: 26px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        /* JUDUL LABEL (Keterangan) */
+        [data-testid="stMetricLabel"] {
+            font-size: 14px;
+            color: #475569;
+            font-weight: 600;
+        }
+
+        /* TOMBOL SIMPAN */
+        .stButton > button {
+            background-color: #3b82f6; /* Biru cerah */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            height: 45px;
+            width: 100%;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+        .stButton > button:hover {
+            background-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+        }
+
+        /* ALERT BOX BIAR KEREN */
+        .stAlert {
+            border-radius: 8px;
+        }
+
+        /* JUDUL HALAMAN */
+        h1, h2, h3 {
+            color: #0f172a !important;
+            font-family: 'Segoe UI', sans-serif;
+            font-weight: 700;
+        }
+        
     </style>
 """, unsafe_allow_html=True)
 
-# --- 2. KONEKSI GOOGLE SHEETS (SIMPLE & ROBUST) ---
+# --- 2. KONEKSI GOOGLE SHEETS (YANG SUDAH TERBUKTI SUKSES) ---
 @st.cache_resource
 def connect_to_sheet():
     scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
     
     # CEK KONEKSI CLOUD (ST.SECRETS)
     if "gcp_service_account" in st.secrets:
-        # Ambil data rahasia
         secrets_data = st.secrets["gcp_service_account"]
-        
-        # LOGIKA SEDERHANA:
-        # Kalau dia Teks (String), kita ubah jadi JSON.
-        # Kalau dia sudah Dictionary (TOML), langsung pakai!
+        # Logika: Kalau string di-decode, kalau dict langsung pakai
         if isinstance(secrets_data, str):
             creds_dict = json.loads(secrets_data)
         else:
-            # Ini yang terjadi sekarang: Data sudah rapi (AttrDict), kita ubah jadi dict biasa
             creds_dict = dict(secrets_data)
 
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
@@ -78,11 +137,17 @@ data_budget = ws_budget.get_all_records()
 df_budget = pd.DataFrame(data_budget)
 df_budget['Batas_Anggaran'] = pd.to_numeric(df_budget['Batas_Anggaran'], errors='coerce').fillna(0)
 
-# --- SIDEBAR ---
+# --- SIDEBAR (DENGAN LOGO KEREN) ---
 with st.sidebar:
-    st.title("DOMPET RAKA 💎")
+    # Logo Dompet 3D
+    st.image("https://cdn-icons-png.flaticon.com/512/9382/9382189.png", width=120)
+    
+    st.title("DOMPET RAKA")
+    st.caption("Financial Command Center")
     st.markdown("---")
+    
     with st.form(key='input_form', clear_on_submit=True):
+        st.markdown("**📝 Input Transaksi Baru**")
         tgl_input = st.date_input("Tanggal", date.today())
         tipe_input = st.selectbox("Tipe", ["Pengeluaran", "Pemasukan"])
         list_kategori = df_budget['Kategori'].tolist() if not df_budget.empty else ["Umum"]
@@ -97,7 +162,7 @@ with st.sidebar:
         st.toast("Data Berhasil Disimpan!", icon="✅")
         st.rerun()
 
-# --- DASHBOARD ---
+# --- DASHBOARD & HITUNGAN ---
 now = datetime.now()
 df_this_year = df_transaksi[df_transaksi['Tanggal'].dt.year == now.year] if not df_transaksi.empty else pd.DataFrame()
 
@@ -118,45 +183,125 @@ if not df_this_year.empty:
 sisa_hari = max(1, calendar.monthrange(now.year, now.month)[1] - now.day + 1)
 jatah_per_hari = max(0, (total_budget_harian - terpakai_harian) / sisa_hari)
 
-# TAMPILAN
-st.title(f"Selamat {'Pagi' if 5<=now.hour<12 else 'Siang' if 12<=now.hour<18 else 'Malam'}, Raka! 👋")
+# --- TAMPILAN HEADER ---
+jam = datetime.now().hour
+sapaan = "Selamat Pagi" if 5 <= jam < 12 else "Selamat Siang" if 12 <= jam < 18 else "Selamat Malam"
 
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("💰 Saldo Bersih", f"{sisa_uang:,.0f}")
-c2.metric("📥 Pemasukan", f"{total_masuk:,.0f}")
-c3.metric("💸 Pengeluaran", f"{total_keluar:,.0f}")
-c4.metric("🔥 Jatah Jajan/Hari", f"{jatah_per_hari:,.0f}", f"Sisa {sisa_hari} hari")
+st.header(f"{sapaan}, Raka! 👋")
+st.markdown("Berikut laporan keuangan kamu hari ini.")
+
+# ROW 1: KARTU METRIK
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("💰 Saldo Bersih", f"{sisa_uang:,.0f}", delta="Cashflow")
+col2.metric("📥 Total Pemasukan", f"{total_masuk:,.0f}", delta="YTD")
+col3.metric("💸 Total Pengeluaran", f"{total_keluar:,.0f}", delta="-Terpakai", delta_color="inverse")
+col4.metric("🔥 Jatah Jajan/Hari", f"{jatah_per_hari:,.0f}", delta=f"Sisa {sisa_hari} hari")
 
 st.markdown("---")
 
-col_left, col_right = st.columns([1, 2])
-with col_left:
-    st.subheader("Porsi Pengeluaran")
-    df_out = df_this_year[df_this_year['Tipe'] == 'Pengeluaran']
-    if not df_out.empty:
-        fig = px.pie(df_out, values='Nominal', names='Kategori', hole=0.5, color_discrete_sequence=px.colors.qualitative.Vivid)
-        fig.update_layout(showlegend=False, margin=dict(t=0, b=0, l=0, r=0), font=dict(color="black"))
-        fig.update_traces(textposition='inside', textinfo='percent+label')
-        st.plotly_chart(fig, use_container_width=True)
+# SIAPKAN DATA MONITORING (Untuk Grafik & Tabel)
+df_monitor = df_budget.copy()
+if not df_this_year.empty:
+    pengeluaran_per_kat = df_this_year[df_this_year['Tipe'] == 'Pengeluaran'].groupby('Kategori')['Nominal'].sum()
+    df_monitor['Terpakai'] = df_monitor['Kategori'].map(pengeluaran_per_kat).fillna(0)
+else:
+    df_monitor['Terpakai'] = 0
+
+df_monitor['Sisa'] = df_monitor['Batas_Anggaran'] - df_monitor['Terpakai']
+df_monitor['Persen'] = (df_monitor['Terpakai'] / df_monitor['Batas_Anggaran']).fillna(0) * 100
+
+# FITUR: ALERT / PERINGATAN ⚠️
+over_budget = df_monitor[df_monitor['Sisa'] < 0]
+if not over_budget.empty:
+    kategori_jebol = ", ".join(over_budget['Kategori'].tolist())
+    st.error(f"🚨 PERHATIAN! Kategori ini sudah Over Budget (Minus): **{kategori_jebol}**. Rem sedikit ya!")
+else:
+    st.success("👍 Aman! Semua pengeluaran masih di bawah anggaran.")
+
+# ROW 2: GRAFIK
+col_grafik_kiri, col_grafik_kanan = st.columns([1, 2])
+
+with col_grafik_kiri:
+    st.subheader("🍩 Porsi Pengeluaran")
+    df_pie = df_this_year[df_this_year['Tipe'] == 'Pengeluaran']
+    if not df_pie.empty:
+        # Pie Chart dengan Warna Vivid & Teks Hitam
+        fig_pie = px.pie(df_pie, values='Nominal', names='Kategori', hole=0.5,
+                         color_discrete_sequence=px.colors.qualitative.Prism) # Warna Prism biar tegas
+        fig_pie.update_layout(
+            showlegend=False, 
+            margin=dict(t=30, b=0, l=0, r=0),
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#000000", size=14) 
+        )
+        fig_pie.update_traces(textposition='inside', textinfo='percent+label')
+        st.plotly_chart(fig_pie, use_container_width=True)
     else:
         st.info("Belum ada data.")
 
-with col_right:
-    st.subheader("Monitoring Budget")
-    df_mon = df_budget.copy()
-    if not df_this_year.empty:
-        used = df_this_year[df_this_year['Tipe'] == 'Pengeluaran'].groupby('Kategori')['Nominal'].sum()
-        df_mon['Terpakai'] = df_mon['Kategori'].map(used).fillna(0)
-    else:
-        df_mon['Terpakai'] = 0
-    df_mon['Persen'] = (df_mon['Terpakai'] / df_mon['Batas_Anggaran']).fillna(0) * 100
+with col_grafik_kanan:
+    st.subheader("📊 Realisasi vs Budget")
     
+    fig_bar = go.Figure()
+    # Bar Background
+    fig_bar.add_trace(go.Bar(
+        y=df_monitor['Kategori'], x=df_monitor['Batas_Anggaran'],
+        name='Batas Budget', orientation='h',
+        marker=dict(color='#cbd5e1', line=dict(width=0))
+    ))
+    
+    # Warna Bar Dinamis (Biru = Aman, Merah = Bahaya)
+    colors = ['#2563eb' if p < 85 else '#ef4444' for p in df_monitor['Persen']]
+    
+    fig_bar.add_trace(go.Bar(
+        y=df_monitor['Kategori'], x=df_monitor['Terpakai'],
+        name='Terpakai', orientation='h',
+        text=df_monitor['Persen'].apply(lambda x: f"{x:.1f}%"),
+        textposition='auto',
+        textfont=dict(color='white'), 
+        marker=dict(color=colors) 
+    ))
+    
+    fig_bar.update_layout(
+        barmode='overlay', 
+        paper_bgcolor="rgba(0,0,0,0)", 
+        plot_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#000000", size=12), 
+        margin=dict(t=10, b=10, l=10, r=10),
+        xaxis=dict(showgrid=True, gridcolor='#94a3b8'),
+        yaxis=dict(showgrid=False),
+        height=400,
+        showlegend=False
+    )
+    st.plotly_chart(fig_bar, use_container_width=True)
+
+# ROW 3: TABEL DETAIL & RIWAYAT (YANG HILANG KEMARIN)
+st.markdown("### 📋 Detail Angka")
+with st.container(border=True): 
     st.dataframe(
-        df_mon[['Kategori', 'Batas_Anggaran', 'Terpakai', 'Persen']],
+        df_monitor[['Kategori', 'Batas_Anggaran', 'Terpakai', 'Sisa', 'Persen']],
         column_config={
-            "Batas_Anggaran": st.column_config.NumberColumn("Jatah", format="Rp %d"),
-            "Terpakai": st.column_config.NumberColumn("Habis", format="Rp %d"),
+            "Batas_Anggaran": st.column_config.NumberColumn("Jatah Awal", format="Rp %d"),
+            "Terpakai": st.column_config.NumberColumn("Terpakai", format="Rp %d"),
+            "Sisa": st.column_config.NumberColumn("Sisa Dana", format="Rp %d"),
             "Persen": st.column_config.ProgressColumn("Status", format="%.1f%%", min_value=0, max_value=100),
         },
-        use_container_width=True, hide_index=True
+        use_container_width=True,
+        hide_index=True
     )
+
+# FITUR: LIHAT RIWAYAT TRANSAKSI 📜
+st.markdown("---")
+with st.expander("📜 Lihat Riwayat Transaksi Terakhir (Klik Disini)"):
+    if not df_transaksi.empty:
+        # Tampilkan data terbaru paling atas
+        st.dataframe(
+            df_transaksi.sort_values(by="Tanggal", ascending=False),
+            use_container_width=True,
+            column_config={
+                "Tanggal": st.column_config.DateColumn("Tanggal", format="DD/MM/YYYY"),
+                "Nominal": st.column_config.NumberColumn("Nominal", format="Rp %d")
+            }
+        )
+    else:
+        st.info("Belum ada transaksi.")
